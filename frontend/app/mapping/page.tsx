@@ -20,7 +20,7 @@ export default function MappingPage() {
       return;
     }
 
-    const res = await fetch("http://localhost:8000/sheets/mapping", {
+    const res = await fetch("https://fastfwd.onrender.com/sheets/mapping", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"

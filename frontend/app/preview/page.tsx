@@ -19,7 +19,7 @@ export default function HomePage() {
   }, []);
 
   const handleLogin = async () => {
-    const res = await fetch("http://localhost:8000/auth/google/login");
+    const res = await fetch("https://fastfwd.onrender.com/auth/google/login");
     const data = await res.json();
     setAuthUrl(data.auth_url);
     window.location.href = data.auth_url;

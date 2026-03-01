@@ -22,7 +22,7 @@ export default function LogsPage() {
     const email = localStorage.getItem("fastfwd_user_email") || "";
     setUserEmail(email);
     if (email) {
-      fetch(`http://localhost:8000/workflows/logs?user_email=${encodeURIComponent(email)}`)
+      fetch(`https://fastfwd.onrender.com/workflows/logs?user_email=${encodeURIComponent(email)}`)
         .then((r) => r.json())
         .then((data) => setLogs(data.logs || []))
         .catch(() => setErrorText("Could not load logs"));

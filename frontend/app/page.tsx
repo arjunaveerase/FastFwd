@@ -72,7 +72,7 @@ type DraftRow = {
   prior_thread_exists: boolean;
 };
 
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = "https://fastfwd.onrender.com";
 const DEFAULT_SHEET =
   "https://docs.google.com/spreadsheets/d/1Q4VfL65ZlBnDfZAffmx9WFfPFMDbEKDxOdutebQX_PM/edit?gid=0#gid=0";
 
@@ -97,7 +97,7 @@ async function apiFetch(path: string, options?: RequestInit) {
   } catch (e: any) {
     if (e.message === "Failed to fetch") {
       throw new Error(
-        "Cannot reach the backend service. Make sure the FastAPI server is running on http://127.0.0.1:8000."
+        "Cannot reach the backend service. Make sure the FastAPI server is running on https://fastfwd.onrender.com."
       );
     }
     throw e;
