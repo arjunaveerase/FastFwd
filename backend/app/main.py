@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.db import Base, engine
 from app.routes_auth import router as auth_router
 from app.routes_sheets import router as sheets_router
-# from app.routes_workflows import router as workflows_router
+from app.routes_workflows import router as workflows_router
 from app.routes_logs import router as logs_router
 from app.config import FRONTEND_URL
 
@@ -27,7 +27,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(sheets_router)
-# app.include_router(workflows_router)
+app.include_router(workflows_router)
 app.include_router(logs_router)
 
 @app.get("/")
