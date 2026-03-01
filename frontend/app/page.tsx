@@ -229,13 +229,10 @@ export default function HomePage() {
   };
 
   const loadLogs = async () => {
-    if (!userEmail) return;
     setLoadingLogs(true);
     try {
-      const data = await apiFetch(`/workflows/logs?user_email=${encodeURIComponent(userEmail)}`);
-      setRecentLogs(data.logs || []);
-    } catch (e: any) {
-      setErrorText(e.message || "Could not load logs");
+      // Workflows routes are disabled on the deployed backend right now.
+      setRecentLogs([]);
     } finally {
       setLoadingLogs(false);
     }
@@ -267,15 +264,37 @@ export default function HomePage() {
         body: JSON.stringify({ user_email: userEmail, spreadsheet_url: sheetUrl }),
       });
 
-      setConnectionId(connectData.connection_id);
+      setConnectionId(connectData.connection_id ?? null);
 
-      const boot = await apiFetch(
-        `/workflows/bootstrap?user_email=${encodeURIComponent(userEmail)}&connection_id=${connectData.connection_id}`
-      );
+      const fallbackBoot: BootData = {
+        spreadsheet_name:
+          connectData.spreadsheet_name ||
+          connectData.name ||
+          "Sheet connected successfully",
+        tabs: Array.isArray(connectData.tabs) ? connectData.tabs : [],
+        detected: {
+          emailer_tab:
+            connectData.detected?.emailer_tab ||
+            connectData.emailer_tab ||
+            "Detected",
+          sku_tab:
+            connectData.detected?.sku_tab ||
+            connectData.sku_tab ||
+            "Detected",
+        },
+        columns: Array.isArray(connectData.columns) ? connectData.columns : [],
+        vendors: Array.isArray(connectData.vendors) ? connectData.vendors : [],
+        rows: Array.isArray(connectData.rows) ? connectData.rows : [],
+        sku_columns: Array.isArray(connectData.sku_columns) ? connectData.sku_columns : [],
+        vendor_defaults:
+          connectData.vendor_defaults && typeof connectData.vendor_defaults === "object"
+            ? connectData.vendor_defaults
+            : {},
+      };
 
-      setBootData(boot);
+      setBootData(fallbackBoot);
       setDraftRows([]);
-      setVendorToAdd(boot.vendors?.[0] || "");
+      setVendorToAdd(fallbackBoot.vendors?.[0] || "");
       setStep(1);
       await loadLogs();
     } catch (e: any) {
@@ -374,28 +393,13 @@ export default function HomePage() {
     setDraftRows((prev) => prev.filter((row) => row.rowId !== rowId));
   };
 
-  const previewVendor = async (row: DraftRow) => {
-    if (!connectionId) return;
-
+  const previewVendor = async (_row: DraftRow) => {
     setPreviewLoading(true);
     setErrorText("");
     try {
-      const data = await apiFetch("/workflows/preview", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user_email: userEmail,
-          connection_id: connectionId,
-          vendor_name: row.vendor_name,
-          template_type: row.template_type || "RO_INITIAL",
-          sender_name: senderName.trim(),
-        }),
-      });
-
-      setPreviewVendorName(row.vendor_name);
-      setActivePreview(data);
-    } catch (e: any) {
-      setErrorText(e.message || "Preview failed");
+      setActivePreview(null);
+      setPreviewVendorName("");
+      setErrorText("Preview is temporarily disabled in the deployed build because workflows routes are disabled on the backend.");
     } finally {
       setPreviewLoading(false);
     }
@@ -415,57 +419,14 @@ export default function HomePage() {
     setErrorText("");
     setSendLogs([]);
 
-    const results: SendLog[] = [];
+    const results: SendLog[] = draftRows.map((row) => ({
+      vendor: row.vendor_name,
+      status: "blocked",
+      error: "Send is temporarily disabled in the deployed build because workflows routes are disabled on the backend.",
+    }));
 
-    for (const row of draftRows) {
-      try {
-        const toList = uniqueEmails(row.to_email_ids);
-        const ccList = uniqueEmails(row.cc_email_ids);
-
-        if (!toList.length) {
-          results.push({
-            vendor: row.vendor_name,
-            status: "failed",
-            error: "No recipient email found in To",
-          });
-          setSendLogs([...results]);
-          continue;
-        }
-
-        const data = await apiFetch("/workflows/send", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            user_email: userEmail,
-            connection_id: connectionId,
-            vendor_name: row.vendor_name,
-            template_type: row.template_type || "RO_INITIAL",
-            to_emails: toList,
-            cc_emails: ccList,
-            sender_name: senderName.trim(),
-          }),
-        });
-
-        results.push({
-          vendor: row.vendor_name,
-          status: "sent",
-          subject: data.subject,
-          thread_id: data.thread_id,
-          message_id: data.message_id,
-        });
-      } catch (e: any) {
-        results.push({
-          vendor: row.vendor_name,
-          status: "failed",
-          error: e.message || "Send failed",
-        });
-      }
-
-      setSendLogs([...results]);
-    }
-
+    setSendLogs(results);
     setSending(false);
-    await loadLogs();
   };
 
   const canGoNext = !!bootData;
@@ -636,16 +597,20 @@ export default function HomePage() {
                         value={vendorToAdd}
                         onChange={(e) => setVendorToAdd(e.target.value)}
                       >
-                        {vendorOptions.map((vendor) => (
-                          <option key={vendor} value={vendor}>
-                            {vendor}
-                          </option>
-                        ))}
+                        {vendorOptions.length ? (
+                          vendorOptions.map((vendor) => (
+                            <option key={vendor} value={vendor}>
+                              {vendor}
+                            </option>
+                          ))
+                        ) : (
+                          <option value="">No vendors returned by current backend</option>
+                        )}
                       </select>
                     </div>
 
                     <div style={{ display: "flex", alignItems: "end", gap: 12 }}>
-                      <button className="button" onClick={addVendorRow}>
+                      <button className="button" onClick={addVendorRow} disabled={!vendorToAdd}>
                         Add Vendor Row
                       </button>
                       <button className="button secondary" onClick={() => setStep(1)}>
