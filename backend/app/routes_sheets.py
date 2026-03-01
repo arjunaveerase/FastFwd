@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-
+from app.config import GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
 from app.db import get_db
 from app.models import User, OAuthAccount, SheetConnection, ColumnMapping
 from app.schemas import SheetConnectRequest, SelectTabRequest, MappingRequest
@@ -26,8 +26,13 @@ def get_user_and_oauth(db: Session, user_email: str):
 def connect_sheet(payload: SheetConnectRequest, db: Session = Depends(get_db)):
     try:
         user, oauth = get_user_and_oauth(db, payload.user_email)
-        creds = credentials_from_dict(oauth.access_token, oauth.refresh_token)
-
+        creds = credentials_from_dict({
+            "token": oauth.access_token,
+            "refresh_token": oauth.refresh_token,
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "client_id": GOOGLE_CLIENT_ID,
+            "client_secret": GOOGLE_CLIENT_SECRET,
+        })
         spreadsheet_id = extract_spreadsheet_id(payload.spreadsheet_url)
         if not spreadsheet_id:
             raise HTTPException(status_code=400, detail="Invalid Google Sheet URL.")
@@ -103,7 +108,13 @@ def get_columns(connection_id: int, user_email: str, db: Session = Depends(get_d
     if not conn.selected_tab:
         raise HTTPException(status_code=400, detail="No tab selected")
 
-    creds = credentials_from_dict(oauth.access_token, oauth.refresh_token)
+    creds = credentials_from_dict({
+    "token": oauth.access_token,
+    "refresh_token": oauth.refresh_token,
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "client_id": GOOGLE_CLIENT_ID,
+    "client_secret": GOOGLE_CLIENT_SECRET,
+    })
     df = read_tab_as_df(creds, conn.spreadsheet_id, conn.selected_tab)
 
     return {
