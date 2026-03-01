@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app.models import User, OAuthAccount, SheetConnection, ColumnMapping
 from app.schemas import SheetConnectRequest, SelectTabRequest, MappingRequest
-from app.google_oauth import build_credentials_from_tokens
+from app.google_oauth import credentials_from_dict
 from app.sheets_service import extract_spreadsheet_id, get_spreadsheet_meta, list_tabs, read_tab_as_df
 
 router = APIRouter(prefix="/sheets", tags=["sheets"])
@@ -26,7 +26,7 @@ def get_user_and_oauth(db: Session, user_email: str):
 def connect_sheet(payload: SheetConnectRequest, db: Session = Depends(get_db)):
     try:
         user, oauth = get_user_and_oauth(db, payload.user_email)
-        creds = build_credentials_from_tokens(oauth.access_token, oauth.refresh_token)
+        creds = credentials_from_dict(oauth.access_token, oauth.refresh_token)
 
         spreadsheet_id = extract_spreadsheet_id(payload.spreadsheet_url)
         if not spreadsheet_id:
@@ -103,7 +103,7 @@ def get_columns(connection_id: int, user_email: str, db: Session = Depends(get_d
     if not conn.selected_tab:
         raise HTTPException(status_code=400, detail="No tab selected")
 
-    creds = build_credentials_from_tokens(oauth.access_token, oauth.refresh_token)
+    creds = credentials_from_dict(oauth.access_token, oauth.refresh_token)
     df = read_tab_as_df(creds, conn.spreadsheet_id, conn.selected_tab)
 
     return {
