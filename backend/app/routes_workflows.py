@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app.gmail_service import get_message_thread_context, send_email
 from app.google_oauth import load_user_credentials
-from app.models import GoogleSheetConnection, SendLog
+from app.models import SheetConnection, SendLog
 from app.schemas import WorkflowPreviewRequest, WorkflowSendRequest
 from app.sheets_service import load_sheet_tabs_as_dataframes
 from app.template_service import normalize_template_type, render_template
@@ -59,10 +59,10 @@ def join_email_list(values: List[str]) -> str:
 
 def get_sheet_frames(user_email: str, connection_id: int, db: Session):
     connection = (
-        db.query(GoogleSheetConnection)
+        db.query(SheetConnection)
         .filter(
-            GoogleSheetConnection.id == connection_id,
-            GoogleSheetConnection.user_email == user_email,
+            SheetConnection.id == connection_id,
+            SheetConnection.user_email == user_email,
         )
         .first()
     )
