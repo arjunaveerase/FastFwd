@@ -40,3 +40,24 @@ class SendRequest(BaseModel):
     to_emails: List[str]
     cc_emails: List[str]
     sender_name: Optional[str] = "Arjun SE"
+
+from typing import List, Optional
+from pydantic import BaseModel
+
+
+class WorkflowPreviewRequest(BaseModel):
+    user_email: str
+    connection_id: int
+    vendor_name: str
+    template_type: str = "RO_INITIAL"
+    sender_name: Optional[str] = None
+
+
+class WorkflowSendRequest(BaseModel):
+    user_email: str
+    connection_id: int
+    vendor_name: str
+    template_type: str = "RO_INITIAL"
+    to_emails: List[str]
+    cc_emails: List[str] = []
+    sender_name: Optional[str] = None
